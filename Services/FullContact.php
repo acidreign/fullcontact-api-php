@@ -45,6 +45,10 @@ class Services_FullContact
     protected $_webhookUrl = null;
     protected $_webhookId = null;
 
+    protected $_rateLimit = null;
+    protected $_rateLimitRemaining = null;
+    protected $_rateLimitReset = null;
+
     public $response_obj  = null;
     public $response_code = null;
     public $response_json = null;
@@ -73,6 +77,29 @@ class Services_FullContact
         $this->_webhookUrl = $url;
         $this->_webhookId  = $id;
         return $this;
+    }
+
+    /**
+     * Read each response header line by line and
+     * grab the header data we are interested in.
+     *
+     * @author  Dave Hennigar <dave.hennigar@gmail.com> @acidreign
+     * @param   object $curl
+     * @param   string $header_line
+     */
+    protected function readHeaderLine($curl, $header_line) {
+        list($key, $value) = explode(': ', $line);
+        switch (strtoupper($key)) {
+            case 'X-RATE-LIMIT-LIMIT':
+                $this->_rateLimit = intval($value);
+                break;
+            case 'X-RATE-LIMIT-REMAINING':
+                $this->_rateLimitRemaining = intval($value);
+                break;
+            case 'X-RATE-LIMIT-RESET':
+                $this->_rateLimitReset = intval($value);
+                break;
+        }
     }
 
     /**
@@ -109,6 +136,7 @@ class Services_FullContact
         $connection = curl_init($fullUrl);
         curl_setopt($connection, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($connection, CURLOPT_USERAGENT, self::USER_AGENT);
+        curl_setopt($connection, CURLOPT_HEADERFUNCTION, [$this, 'readHeaderLine']);
 
         //execute request
         $this->response_json = curl_exec($connection);
