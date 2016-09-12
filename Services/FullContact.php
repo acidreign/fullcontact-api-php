@@ -88,7 +88,7 @@ class Services_FullContact
      * @param   string $header_line
      */
     protected function readHeaderLine($curl, $header_line) {
-        list($key, $value) = explode(': ', $line);
+        list($key, $value) = explode(': ', $header_line);
         switch (strtoupper($key)) {
             case 'X-RATE-LIMIT-LIMIT':
                 $this->_rateLimit = intval($value);
@@ -144,6 +144,7 @@ class Services_FullContact
         $this->response_obj  = json_decode($this->response_json);
 
         if ('403' == $this->response_code) {
+            // TODO: 403 is also returned when rate-limit is exceeded
             throw new Services_FullContact_Exception_NoCredit($this->response_obj->message);
         }
 
